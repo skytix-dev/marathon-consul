@@ -1,0 +1,12 @@
+ext.versions = [
+
+        //spring
+
+        springCloudStarterParent    : '1.0.2.RELEASE',
+        springSession               : '1.0.1.RELEASE',
+
+        //spring build script dependencies
+        springloaded                : '1.2.4.RELEASE',
+        springBootGradlePlugin      : '1.2.5.RELEASE',
+        springGradleDependencyPlugin: '0.6.0.RELEASE',
+]

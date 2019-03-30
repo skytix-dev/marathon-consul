@@ -1,0 +1,62 @@
+plugins {
+    id "org.springframework.boot" version "2.0.5.RELEASE"
+}
+
+apply plugin: 'idea'
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'io.spring.dependency-management'
+
+final def APP_NAME = 'marathon-consul'
+final def GROUP_ID = 'com.skytix'
+group = GROUP_ID
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url "http://repo.spring.io/libs-milestone/"
+    }
+}
+
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencyManagement {
+
+    resolutionStrategy {
+        cacheChangingModulesFor 0, 'seconds'
+    }
+
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = file("$buildDir/classes/main/")
+    }
+}
+
+dependencies {
+    compile ('org.springframework.boot:spring-boot-starter-web:2.1.0.M3')
+    compile ('org.springframework.boot:spring-boot-starter-webflux:2.1.0.M3')
+    compile("commons-cli:commons-cli:1.4")
+    compile('org.apache.commons:commons-lang3:3.8')
+    compile("org.apache.zookeeper:zookeeper:3.4.13")
+    compile("org.slf4j:jcl-over-slf4j:1.7.12")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.5")
+    compile("com.fasterxml.jackson.core:jackson-databind:2.9.6")
+    compile("com.fasterxml.jackson.core:jackson-core:2.9.6")
+    compile("com.fasterxml.jackson.core:jackson-annotations:2.9.6")
+    compile("com.fasterxml.jackson.module:jackson-module-mrbean:2.9.6")
+    compile('com.netflix.feign:feign-core:8.18.0')
+    compile('com.netflix.feign:feign-jackson:8.18.0')
+    compile('javax.xml.bind:jaxb-api:2.3.0')
+    compile group: 'org.apache.curator', name: 'curator-framework', version: '4.0.1'
+
+}
