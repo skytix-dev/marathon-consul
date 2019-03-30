@@ -1,4 +1,4 @@
-#marathon-consul
+# marathon-consul
 
 This is simple spring-boot application that consumes events emitted via the /v2/events service in Marathon and registers them as a service inside Consul. It supports docker containers that publish multiple ports.
 
