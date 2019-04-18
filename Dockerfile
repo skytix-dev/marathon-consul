@@ -5,4 +5,4 @@ WORKDIR /
 
 COPY build/libs/marathon-consul.jar /
 
-ENTRYPOINT exec java -jar marathon-consul.jar
+ENTRYPOINT ["java", "-jar", "marathon-consul.jar"]
