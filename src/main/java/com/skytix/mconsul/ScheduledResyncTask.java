@@ -8,6 +8,7 @@ import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.services.marathon.rest.HealthCheckResult;
 import com.skytix.mconsul.services.marathon.rest.Task;
 import com.skytix.mconsul.services.mesos.MesosService;
+import com.skytix.mconsul.services.zookeeper.ZooKeeperService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,19 +28,25 @@ public class ScheduledResyncTask {
     private ConsulService mConsulService;
     @Autowired
     private MesosService mMesosService;
+    @Autowired
+    private ZooKeeperService mZooKeeperService;
 
     @Scheduled(fixedRateString = "${resyncInterval:60000}")
     public void syncServices() {
 
         try {
-            log.info("Performing periodic idle re-sync of services");
-            final List<ApplicationInstance> marathonApps = getAppInstances(mMarathonService.getApplications().getApplications());
-            final List<ApplicationInstance> consulApps = getAppInstances(mConsulService.getCurrentServices().getApplications());
 
-            deleteOldServices(marathonApps, consulApps);
-            createNewServices(marathonApps, consulApps);
+            if (mZooKeeperService.getLeaderLatch().hasLeadership()) {
+                log.info("Performing periodic idle re-sync of services");
 
-        } catch (RuntimeException aE) {
+                final List<ApplicationInstance> marathonApps = getAppInstances(mMarathonService.getApplications().getApplications());
+                final List<ApplicationInstance> consulApps = getAppInstances(mConsulService.getCurrentServices().getApplications());
+
+                deleteOldServices(marathonApps, consulApps);
+                createNewServices(marathonApps, consulApps);
+            }
+
+        } catch (Exception aE) {
             log.error(aE.getMessage(), aE);
         }
 

@@ -1,5 +1,5 @@
 plugins {
-    id "org.springframework.boot" version "2.0.5.RELEASE"
+    id "org.springframework.boot" version "2.1.4.RELEASE"
 }
 
 apply plugin: 'idea'
@@ -32,8 +32,8 @@ dependencyManagement {
 
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 idea {
     module {
@@ -43,20 +43,23 @@ idea {
 }
 
 dependencies {
-    compile ('org.springframework.boot:spring-boot-starter-web:2.1.0.M3')
-    compile ('org.springframework.boot:spring-boot-starter-webflux:2.1.0.M3')
+    compile ('org.springframework.boot:spring-boot-starter:2.1.4.RELEASE')
+    compile ('org.springframework.boot:spring-boot-starter-webflux:2.1.4.RELEASE')
     compile("commons-cli:commons-cli:1.4")
     compile('org.apache.commons:commons-lang3:3.8')
     compile("org.apache.zookeeper:zookeeper:3.4.13")
     compile("org.slf4j:jcl-over-slf4j:1.7.12")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.5")
-    compile("com.fasterxml.jackson.core:jackson-databind:2.9.6")
-    compile("com.fasterxml.jackson.core:jackson-core:2.9.6")
-    compile("com.fasterxml.jackson.core:jackson-annotations:2.9.6")
-    compile("com.fasterxml.jackson.module:jackson-module-mrbean:2.9.6")
+    compile("com.fasterxml.jackson.core:jackson-databind:2.9.8")
+    compile("com.fasterxml.jackson.core:jackson-core:2.9.8")
+    compile("com.fasterxml.jackson.core:jackson-annotations:2.9.8")
+    compile("com.fasterxml.jackson.module:jackson-module-mrbean:2.9.8")
     compile('com.netflix.feign:feign-core:8.18.0')
     compile('com.netflix.feign:feign-jackson:8.18.0')
     compile('javax.xml.bind:jaxb-api:2.3.0')
-    compile group: 'org.apache.curator', name: 'curator-framework', version: '4.0.1'
+    compile('com.sun.xml.bind:jaxb-core:2.3.0')
+    compile('com.sun.xml.bind:jaxb-impl:2.3.0')
+    compile group: 'org.apache.curator', name: 'curator-framework', version: '4.2.0'
+    compile group: 'org.apache.curator', name: 'curator-recipes', version: '4.2.0'
 
 }

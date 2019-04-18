@@ -3,6 +3,7 @@ package com.skytix.mconsul.services.zookeeper;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ public class ZooKeeperService {
     @Value("${zkHosts}")
     private String mConnectString;
     private CuratorFramework mCuratorFramework;
+    private LeaderLatch mLeaderLatch;
 
     @PostConstruct
     public void init() throws IOException, InterruptedException {
@@ -77,6 +79,16 @@ public class ZooKeeperService {
             throw new ZooKeeperException(aE);
         }
 
+    }
+
+    public synchronized LeaderLatch getLeaderLatch() throws Exception {
+
+        if (mLeaderLatch == null) {
+            mLeaderLatch = new LeaderLatch(mCuratorFramework, "/__mconsul_leader");
+            mLeaderLatch.start();
+        }
+
+        return mLeaderLatch;
     }
 
 }

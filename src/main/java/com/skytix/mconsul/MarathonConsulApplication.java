@@ -6,8 +6,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -22,9 +23,7 @@ public class MarathonConsulApplication {
 
     public static void main(String[] aArgs) {
         ToStringBuilder.setDefaultStyle(ToStringStyle.NO_CLASS_NAME_STYLE);
-
-        final SpringApplication app = new SpringApplication(MarathonConsulApplication.class);
-        app.run(aArgs);
+        new SpringApplicationBuilder(MarathonConsulApplication.class).web(WebApplicationType.NONE).run(aArgs);
         log.info("marathon-consul is now running...");
         started.setValue(true);
     }
