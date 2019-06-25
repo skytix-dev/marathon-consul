@@ -7,7 +7,7 @@ import feign.RequestLine;
  */
 public interface MesosApi {
 
-    @RequestLine("GET /master/tasks.json")
+    @RequestLine("GET /master/tasks")
     public MesosTaskList getTasks();
 
 }
