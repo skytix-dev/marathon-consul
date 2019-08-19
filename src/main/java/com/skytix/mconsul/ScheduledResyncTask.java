@@ -4,6 +4,7 @@ import com.skytix.mconsul.event.TaskStatus;
 import com.skytix.mconsul.models.Application;
 import com.skytix.mconsul.models.ApplicationInstance;
 import com.skytix.mconsul.services.consul.ConsulService;
+import com.skytix.mconsul.services.consul.ConsulServiceException;
 import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.services.marathon.rest.HealthCheckResult;
 import com.skytix.mconsul.services.marathon.rest.Task;
@@ -30,6 +31,8 @@ public class ScheduledResyncTask {
     private MesosService mMesosService;
     @Autowired
     private ZooKeeperService mZooKeeperService;
+    @Autowired
+    private ApplicationErrorHandler mErrorHandler;
 
     @Scheduled(fixedRateString = "${resyncInterval:60000}")
     public void syncServices() {
@@ -46,8 +49,12 @@ public class ScheduledResyncTask {
                 createNewServices(marathonApps, consulApps);
             }
 
-        } catch (Exception aE) {
-            log.error(aE.getMessage(), aE);
+        } catch (ConsulServiceException e) {
+            log.error(e.getMessage(), e);
+            mErrorHandler.handle(e);
+
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
         }
 
     }

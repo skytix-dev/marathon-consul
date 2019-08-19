@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
@@ -34,6 +36,8 @@ public class RegistrationRunner implements CommandLineRunner {
     private static final Object mWriteLock = new Object();
 
     @Autowired
+    private ApplicationContext mAppContext;
+    @Autowired
     private MarathonService mMarathonService;
     @Autowired
     private ConsulService mConsulService;
@@ -41,6 +45,8 @@ public class RegistrationRunner implements CommandLineRunner {
     private ObjectMapper mObjectMapper;
     @Autowired
     private ZooKeeperService mZooKeeperService;
+    @Autowired
+    private ApplicationErrorHandler mErrorHandler;
 
     @Value("${inactivityExpireTime:60}")
     private int mInactivityExpireTime;
@@ -61,15 +67,15 @@ public class RegistrationRunner implements CommandLineRunner {
 
         log.info("Marathon version: " + mMarathonVersion.get());
 
-        mEventHandler = new MarathonEventHandler(mMarathonService, mConsulService, mWriteLock, mMarathonVersion);
+        mEventHandler = new MarathonEventHandler(mMarathonService, mConsulService, mWriteLock, mMarathonVersion, mErrorHandler);
     }
 
     @Override
     public void run(String... args) throws Exception {
-        mLeaderLatch = mZooKeeperService.getLeaderLatch();
         mRunning = true;
 
         while (mRunning) {
+            mLeaderLatch = mZooKeeperService.getLeaderLatch();
 
             try {
 
@@ -111,6 +117,7 @@ public class RegistrationRunner implements CommandLineRunner {
                     }
 
                     disposable.dispose();
+                    break;
                 }
 
             } catch (InterruptedException e) {
@@ -120,7 +127,7 @@ public class RegistrationRunner implements CommandLineRunner {
 
         }
 
-        stop();
+        ((ConfigurableApplicationContext)mAppContext).close();
     }
 
     private void handleEvent(ServerSentEvent<String> aEvent) {
@@ -150,13 +157,27 @@ public class RegistrationRunner implements CommandLineRunner {
 
     }
 
-    private void stop(Throwable e) {
+    public void stop(Throwable e) {
         log.error(e.getMessage(), e);
         stop();
     }
 
-    private void stop() {
-        mConnected = false;
+    public void stop() {
+
+        try {
+            mConnected = false;
+            mZooKeeperService.resetLatch();
+
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+
+    }
+
+    public void exit(Throwable e) {
+        stop(e);
+        mZooKeeperService.destroy();
+        mRunning = false;
     }
 
 }

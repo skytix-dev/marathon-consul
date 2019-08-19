@@ -13,12 +13,14 @@ public class MarathonEventHandler {
     private final ConsulService mConsulService;
     private final Object mWriteLock;
     private final Version mMarathonVersion;
+    private final ApplicationErrorHandler mErrorHandler;
 
-    public MarathonEventHandler(MarathonService aMarathonService, ConsulService aConsulService, Object aWriteLock, Version aMarathonVersion) {
+    public MarathonEventHandler(MarathonService aMarathonService, ConsulService aConsulService, Object aWriteLock, Version aMarathonVersion, ApplicationErrorHandler aErrorHandler) {
         mMarathonService = aMarathonService;
         mConsulService = aConsulService;
         mWriteLock = aWriteLock;
         mMarathonVersion = aMarathonVersion;
+        mErrorHandler = aErrorHandler;
     }
 
     public void onEvent(MarathonSSEEvent event) throws Exception {
@@ -29,7 +31,7 @@ public class MarathonEventHandler {
             synchronized (mWriteLock) {
 
                 marathonEventType.getEventHandlerBuilder()
-                        .build(mMarathonService, mConsulService)
+                        .build(mMarathonService, mConsulService, mErrorHandler)
                         .handle(event.getMarathonEvent(), mMarathonVersion);
 
             }

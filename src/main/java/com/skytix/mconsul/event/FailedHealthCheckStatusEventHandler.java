@@ -1,5 +1,6 @@
 package com.skytix.mconsul.event;
 
+import com.skytix.mconsul.ApplicationErrorHandler;
 import com.skytix.mconsul.services.consul.ConsulService;
 import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.utils.Version;
@@ -12,8 +13,8 @@ import org.slf4j.LoggerFactory;
 public class FailedHealthCheckStatusEventHandler extends AbstractEventHandler<FailedHealthCheckEvent> {
     private static final Logger log = LoggerFactory.getLogger(FailedHealthCheckStatusEventHandler.class);
 
-    public FailedHealthCheckStatusEventHandler(MarathonService aMarathonService, ConsulService aConsulService) {
-        super(aMarathonService, aConsulService);
+    public FailedHealthCheckStatusEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ApplicationErrorHandler aErrorHandler) {
+        super(aMarathonService, aConsulService, aErrorHandler);
     }
 
     @Override

@@ -91,4 +91,13 @@ public class ZooKeeperService {
         return mLeaderLatch;
     }
 
+    public synchronized void resetLatch() throws Exception {
+
+        if (mLeaderLatch != null) {
+            mLeaderLatch.close();
+            mLeaderLatch = null;
+        }
+
+    }
+
 }

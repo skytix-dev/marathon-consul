@@ -1,7 +1,9 @@
 package com.skytix.mconsul.event;
 
+import com.skytix.mconsul.ApplicationErrorHandler;
 import com.skytix.mconsul.models.ApplicationInstance;
 import com.skytix.mconsul.services.consul.ConsulService;
+import com.skytix.mconsul.services.consul.ConsulServiceException;
 import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.utils.Version;
 import org.apache.commons.lang3.StringUtils;
@@ -14,30 +16,36 @@ import org.slf4j.LoggerFactory;
 public class InstanceHealthChangedEventHandler extends AbstractEventHandler<InstanceHealthChangedEvent> {
     private static final Logger log = LoggerFactory.getLogger(InstanceHealthChangedEventHandler.class);
 
-    public InstanceHealthChangedEventHandler(MarathonService aMarathonService, ConsulService aConsulService) {
-        super(aMarathonService, aConsulService);
+    public InstanceHealthChangedEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ApplicationErrorHandler aErrorHandler) {
+        super(aMarathonService, aConsulService, aErrorHandler);
     }
 
     @Override
     public void handle(InstanceHealthChangedEvent aEvent, Version aMarathonVersion) {
-        final ApplicationInstance appInstance = getMarathonService().getInstanceByInstanceId(aEvent.getInstanceId());
 
-        if (appInstance != null) {
+        try {
+            final ApplicationInstance appInstance = getMarathonService().getInstanceByInstanceId(aEvent.getInstanceId());
 
-            if (aEvent.isHealthy()) {
+            if (appInstance != null) {
 
-                if (getConsulService().createNode(appInstance)) {
-                    log.info("Instance is now alive: " + appInstance.getAppName()+":"+appInstance.getHostName()+":" + StringUtils.join(appInstance.getPorts(), ','));
-                }
+                if (aEvent.isHealthy()) {
 
-            } else {
+                    if (getConsulService().createNode(appInstance)) {
+                        log.info("Instance is now alive: " + appInstance.getAppName()+":"+appInstance.getHostName()+":" + StringUtils.join(appInstance.getPorts(), ','));
+                    }
 
-                if (getConsulService().removeInstance(appInstance.getId())) {
-                    log.info("Instance is no longer alive: " + appInstance.getAppName()+":"+appInstance.getHostName()+":" + StringUtils.join(appInstance.getPorts(), ','));
+                } else {
+
+                    if (getConsulService().removeInstance(appInstance.getId())) {
+                        log.info("Instance is no longer alive: " + appInstance.getAppName()+":"+appInstance.getHostName()+":" + StringUtils.join(appInstance.getPorts(), ','));
+                    }
+
                 }
 
             }
 
+        } catch (ConsulServiceException e) {
+            getErrorHandler().handle(e);
         }
 
     }

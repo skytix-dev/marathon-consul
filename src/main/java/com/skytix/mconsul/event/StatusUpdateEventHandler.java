@@ -1,7 +1,9 @@
 package com.skytix.mconsul.event;
 
+import com.skytix.mconsul.ApplicationErrorHandler;
 import com.skytix.mconsul.models.ApplicationInstance;
 import com.skytix.mconsul.services.consul.ConsulService;
+import com.skytix.mconsul.services.consul.ConsulServiceException;
 import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.services.marathon.MarathonUtils;
 import com.skytix.mconsul.utils.Version;
@@ -15,44 +17,50 @@ import org.slf4j.LoggerFactory;
 public class StatusUpdateEventHandler extends AbstractEventHandler<StatusUpdateEvent> {
     private static final Logger log = LoggerFactory.getLogger(StatusUpdateEventHandler.class);
 
-    public StatusUpdateEventHandler(MarathonService aMarathonService, ConsulService aConsulService) {
-        super(aMarathonService, aConsulService);
+    public StatusUpdateEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ApplicationErrorHandler aErrorHandler) {
+        super(aMarathonService, aConsulService, aErrorHandler);
     }
 
     @Override
     public void handle(StatusUpdateEvent aEvent, Version aMarathonVersion) {
-        final String taskStatus = aEvent.getTaskStatus();
 
-        if (!StringUtils.isEmpty(taskStatus)) {
-            final boolean containsHealthChecks = getMarathonService().containsHealthChecks(aEvent.getAppId());
-            final TaskStatus status = TaskStatus.valueOf(taskStatus);
-            final ApplicationInstance appInstance = new ApplicationInstance(aEvent.getTaskId(), aEvent.getAppId(), MarathonUtils.parseAppName(aEvent.getAppId()), aEvent.getHost(), aEvent.getPorts(), status);
+        try {
+            final String taskStatus = aEvent.getTaskStatus();
 
-            if (status.isTerminal()) {
-                // Shut this puppy down.
-                if (getConsulService().removeInstance(appInstance.getId())) {
-                    log.info("Application terminated: "+appInstance+"'.");
-                }
+            if (!StringUtils.isEmpty(taskStatus)) {
+                final boolean containsHealthChecks = getMarathonService().containsHealthChecks(aEvent.getAppId());
+                final TaskStatus status = TaskStatus.valueOf(taskStatus);
+                final ApplicationInstance appInstance = new ApplicationInstance(aEvent.getTaskId(), aEvent.getAppId(), MarathonUtils.parseAppName(aEvent.getAppId()), aEvent.getHost(), aEvent.getPorts(), status);
 
-            } else {
-
-                if (status == TaskStatus.TASK_RUNNING) {
-
-                    if (!containsHealthChecks) {
-                        // We need to check to see if the task has any healthchecks.  If so, we will let the health check failure handler take care of it.
-                        // Same goes for the tasks becomming healthy again.
-                        if (getConsulService().createNode(appInstance)) {
-                            log.info("Application instance '" + appInstance + "' has been created.");
-                        }
-
+                if (status.isTerminal()) {
+                    // Shut this puppy down.
+                    if (getConsulService().removeInstance(appInstance.getId())) {
+                        log.info("Application terminated: "+appInstance+"'.");
                     }
 
                 } else {
-                    log.trace("Status: " + status + " is neither running nor terminal");
+
+                    if (status == TaskStatus.TASK_RUNNING) {
+
+                        if (!containsHealthChecks) {
+                            // We need to check to see if the task has any healthchecks.  If so, we will let the health check failure handler take care of it.
+                            // Same goes for the tasks becomming healthy again.
+                            if (getConsulService().createNode(appInstance)) {
+                                log.info("Application instance '" + appInstance + "' has been created.");
+                            }
+
+                        }
+
+                    } else {
+                        log.trace("Status: " + status + " is neither running nor terminal");
+                    }
+
                 }
 
             }
 
+        } catch (ConsulServiceException e) {
+            getErrorHandler().handle(e);
         }
 
     }

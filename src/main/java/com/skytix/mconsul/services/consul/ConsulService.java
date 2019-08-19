@@ -8,6 +8,7 @@ import com.skytix.mconsul.models.ApplicationInstance;
 import com.skytix.mconsul.models.ServiceTree;
 import com.skytix.mconsul.services.consul.rest.*;
 import feign.Feign;
+import feign.RetryableException;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import org.apache.commons.lang3.ArrayUtils;
@@ -17,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -50,59 +53,103 @@ public class ConsulService {
      * @return List of all Service nodes for all Apps
      */
     public ServiceTree getCurrentServices() {
-        final Map<String, List<ServiceNode>> nodes = new HashMap<>();
-        final Map<String, List<String>> consulServices = getRestInterface().getServices();
+        try {
+            final Map<String, List<ServiceNode>> nodes = new HashMap<>();
+            final Map<String, List<String>> consulServices = getRestInterface().getServices();
 
-        for (String serviceId : consulServices.keySet()) {
+            for (String serviceId : consulServices.keySet()) {
 
-            if (!EXCLUDED_SERVICE_NAMES.contains(serviceId)) {
-                final String serviceName;
+                if (!EXCLUDED_SERVICE_NAMES.contains(serviceId)) {
+                    final String serviceName;
 
-                if (serviceId.matches("^.*?-port[0-9]+$")) {
-                    serviceName = serviceId.substring(0, serviceId.lastIndexOf("-"));
+                    if (serviceId.matches("^.*?-port[0-9]+$")) {
+                        serviceName = serviceId.substring(0, serviceId.lastIndexOf("-"));
 
-                } else {
-                    serviceName = serviceId;
+                    } else {
+                        serviceName = serviceId;
+                    }
+
+                    if (!nodes.containsKey(serviceName)) {
+                        nodes.put(serviceName, new ArrayList<>());
+                    }
+
+                    nodes.get(serviceName).addAll(getServiceNodes(serviceId));
                 }
 
-                if (!nodes.containsKey(serviceName)) {
-                    nodes.put(serviceName, new ArrayList<>());
-                }
+            }
 
-                nodes.get(serviceName).addAll(getServiceNodes(serviceId));
+            return new ServiceTree(nodes);
+
+        } catch (RetryableException e) {
+            final Throwable cause = e.getCause();
+
+            if (cause instanceof SocketTimeoutException | cause instanceof ConnectException) {
+                throw new ConsulServiceException(e);
+
+            } else {
+                throw e;
             }
 
         }
 
-        return new ServiceTree(nodes);
     }
 
     public List<ServiceNode> getServiceNodes(String aServiceName) {
-        return getRestInterface().getService(aServiceName);
-    }
 
-    public boolean removeInstance(String aAppInstanceId) {
-        boolean removed = false;
+        try {
+            return getRestInterface().getService(aServiceName);
 
-        // When we remove an application, we may not always be running on the same node as when it was registered so we need to go through all the nodes we can find
-        // and remove the service from there otherwise there will be service registration conflicts.
-        for (AgentNode node : getRestInterface().getNodes()) {
-            final Map<String, AgentServiceNode> agentServices = getRestInterface(node).getAgentServices();
+        } catch (RetryableException e) {
+            final Throwable cause = e.getCause();
 
-            for (AgentServiceNode agentServiceNode : agentServices.values()) {
-                final String serviceId = agentServiceNode.getId();
-                final String serviceNodeId = ConsulUtils.getAppNamePart(serviceId);
+            if (cause instanceof SocketTimeoutException | cause instanceof ConnectException) {
+                throw new ConsulServiceException(e);
 
-                if (serviceNodeId.equals(aAppInstanceId)) {
-                    getRestInterface(node).removeServiceFromAgent(serviceId);
-                    removed = true;
-                }
-
+            } else {
+                throw e;
             }
 
         }
 
-        return removed;
+    }
+
+    public boolean removeInstance(String aAppInstanceId) {
+
+        try {
+            boolean removed = false;
+
+            // When we remove an application, we may not always be running on the same node as when it was registered so we need to go through all the nodes we can find
+            // and remove the service from there otherwise there will be service registration conflicts.
+            for (AgentNode node : getRestInterface().getNodes()) {
+                final Map<String, AgentServiceNode> agentServices = getRestInterface(node).getAgentServices();
+
+                for (AgentServiceNode agentServiceNode : agentServices.values()) {
+                    final String serviceId = agentServiceNode.getId();
+                    final String serviceNodeId = ConsulUtils.getAppNamePart(serviceId);
+
+                    if (serviceNodeId.equals(aAppInstanceId)) {
+                        getRestInterface(node).removeServiceFromAgent(serviceId);
+                        removed = true;
+                    }
+
+                }
+
+            }
+
+            return removed;
+
+        } catch (RetryableException e) {
+            final Throwable cause = e.getCause();
+
+            if (cause instanceof SocketTimeoutException | cause instanceof ConnectException) {
+                throw new ConsulServiceException(e);
+
+            } else {
+                throw e;
+            }
+
+        }
+
     }
 
     public boolean createNode(ApplicationInstance aApplicationInstance) {
@@ -110,42 +157,57 @@ public class ConsulService {
     }
 
     public boolean createNode(ApplicationInstance aApplicationInstance, String aServiceId) {
-        final String appName = aApplicationInstance.getAppName();
-        final int[] ports = aApplicationInstance.getPorts();
-        final int numPorts = ports.length;
 
-        boolean created = false;
+        try {
+            final String appName = aApplicationInstance.getAppName();
+            final int[] ports = aApplicationInstance.getPorts();
+            final int numPorts = ports.length;
 
-        if (numPorts > 1) {
+            boolean created = false;
 
-            for (int i = 0; i < numPorts; i++) {
-                final String serviceName = appName+"-port"+i;
-                final String serviceId = aServiceId+"-port"+i;
+            if (numPorts > 1) {
 
-                if (!doesInstanceExist(serviceName, aApplicationInstance)) {
-                    registerService(serviceId, serviceName, aApplicationInstance.getHostName(), ports[i]);
-                    created = true;
+                for (int i = 0; i < numPorts; i++) {
+                    final String serviceName = appName+"-port"+i;
+                    final String serviceId = aServiceId+"-port"+i;
+
+                    if (!doesInstanceExist(serviceName, aApplicationInstance)) {
+                        registerService(serviceId, serviceName, aApplicationInstance.getHostName(), ports[i]);
+                        created = true;
+                    }
                 }
+
+            } else {
+
+                if (!doesInstanceExist(appName, aApplicationInstance)) {
+
+                    if (ports.length > 0) {
+                        registerService(aServiceId, appName, aApplicationInstance.getHostName(), ports[0]);
+                        created = true;
+
+                    } else {
+                        log.info("Application " + aApplicationInstance + " has no ports defined.  Ignoring.");
+                    }
+
+                }
+
             }
 
-        } else {
 
-            if (!doesInstanceExist(appName, aApplicationInstance)) {
+            return created;
 
-                if (ports.length > 0) {
-                    registerService(aServiceId, appName, aApplicationInstance.getHostName(), ports[0]);
-                    created = true;
+        } catch (RetryableException e) {
+            final Throwable cause = e.getCause();
 
-                } else {
-                    log.info("Application " + aApplicationInstance + " has no ports defined.  Ignoring.");
-                }
+            if (cause instanceof SocketTimeoutException | cause instanceof ConnectException) {
+                throw new ConsulServiceException(e);
 
+            } else {
+                throw e;
             }
 
         }
 
-
-        return created;
     }
 
     private boolean doesInstanceExist(String aServiceName, ApplicationInstance aAppInstance) {
