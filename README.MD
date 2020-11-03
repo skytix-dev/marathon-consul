@@ -14,7 +14,7 @@ https://hub.docker.com/r/skytix/marathon-consul
 
 ### Sample Marathon Config:
 
-{ "args": [ "--zkHosts=:2181/marathon" ], "container": { "type": "DOCKER", "docker": { "network": "HOST", "image": "skytix/marathon-consul", "forcePullImage": true } }, "id": "marathon-consul", "instances": 1, "cpus": 0.1, "mem": 256 }
+{ "args": [ "--zkHosts=:2181/marathon", "--excludedServiceNames=vault,someApp,someOtherApp" ], "container": { "type": "DOCKER", "docker": { "network": "HOST", "image": "skytix/marathon-consul:1.0.6", "forcePullImage": true } }, "id": "marathon-consul", "instances": 1, "cpus": 0.1, "mem": 256 }
 
 Designed to try and drop in and discover everything, the only configuration you really need to provide is the zookeeper hosts.
 
