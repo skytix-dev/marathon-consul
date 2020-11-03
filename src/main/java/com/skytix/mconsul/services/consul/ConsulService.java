@@ -12,12 +12,14 @@ import feign.RetryableException;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.*;
@@ -29,9 +31,9 @@ import java.util.concurrent.ExecutionException;
 @Component
 public class ConsulService {
     private static final Logger log = LoggerFactory.getLogger(ConsulService.class);
-    private static final List<String> EXCLUDED_SERVICE_NAMES = Arrays.asList("consul");
+    private final List<String> EXCLUDED_SERVICE_NAMES = new ArrayList<>();
 
-    private final LoadingCache<String, Consul> mConsulCache = CacheBuilder.newBuilder().build(new CacheLoader<String, Consul>() {
+    private final LoadingCache<String, Consul> mConsulCache = CacheBuilder.newBuilder().build(new CacheLoader<>() {
 
         @Override
         public Consul load(String key) throws Exception {
@@ -45,8 +47,26 @@ public class ConsulService {
     @Value("${consulAgent:consul.service.consul:8500}")
     private String mConsulHost;
 
+    @Value("${excludedServiceNames}")
+    private String mExcludedServiceNames;
+
     @Autowired
     private ObjectMapper mObjectMapper;
+
+    @PostConstruct
+    public void init() {
+        EXCLUDED_SERVICE_NAMES.add("consul");
+
+        if (StringUtils.isNotBlank(mExcludedServiceNames)) {
+            final String[] serviceNames = mExcludedServiceNames.split(",");
+
+            if (serviceNames.length >= 1) {
+                Collections.addAll(EXCLUDED_SERVICE_NAMES, serviceNames);
+            }
+
+        }
+
+    }
 
     /**
      * Returns all services registered in Consul except for the Consul service itself.

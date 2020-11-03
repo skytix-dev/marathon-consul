@@ -1,5 +1,5 @@
 plugins {
-    id "org.springframework.boot" version "2.1.4.RELEASE"
+    id "org.springframework.boot" version "2.1.8.RELEASE"
 }
 
 apply plugin: 'idea'
@@ -43,8 +43,8 @@ idea {
 }
 
 dependencies {
-    compile ('org.springframework.boot:spring-boot-starter:2.1.4.RELEASE')
-    compile ('org.springframework.boot:spring-boot-starter-webflux:2.1.4.RELEASE')
+    compile ('org.springframework.boot:spring-boot-starter:2.1.8.RELEASE')
+    compile ('org.springframework.boot:spring-boot-starter-webflux:2.1.8.RELEASE')
     compile("commons-cli:commons-cli:1.4")
     compile('org.apache.commons:commons-lang3:3.8')
     compile("org.apache.zookeeper:zookeeper:3.4.13")
