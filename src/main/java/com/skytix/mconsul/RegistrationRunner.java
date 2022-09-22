@@ -18,13 +18,16 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
+import reactor.netty.http.client.HttpClient;
 
 import javax.annotation.PostConstruct;
+import javax.net.ssl.SSLException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,14 +48,14 @@ public class RegistrationRunner implements CommandLineRunner {
     private ObjectMapper mObjectMapper;
     @Autowired
     private ZooKeeperService mZooKeeperService;
-    @Autowired
-    private ApplicationErrorHandler mErrorHandler;
 
     @Value("${inactivityExpireTime:60}")
     private int mInactivityExpireTime;
 
     @Value("${sseReconnectInterval:10}")
     private int mSseReconnectInterval;
+    @Autowired
+    private HttpClient mHttpClient;
 
     private boolean mRunning = true;
     private boolean mConnected = true;
@@ -67,7 +70,7 @@ public class RegistrationRunner implements CommandLineRunner {
 
         log.info("Marathon version: " + mMarathonVersion.get());
 
-        mEventHandler = new MarathonEventHandler(mMarathonService, mConsulService, mWriteLock, mMarathonVersion, mErrorHandler);
+        mEventHandler = new MarathonEventHandler(mMarathonService, mConsulService, mWriteLock, mMarathonVersion, this::exit);
     }
 
     @Override
@@ -92,7 +95,7 @@ public class RegistrationRunner implements CommandLineRunner {
                     log.info("Subscribing to event queue on host '" + leader + "'");
 
                     final ParameterizedTypeReference<ServerSentEvent<String>> typeRef = new ParameterizedTypeReference<>() { /* nothing_here */ };
-                    final WebClient webClient = WebClient.create(leader);
+                    final WebClient webClient = buildWebClient(leader);
 
                     final Flux<ServerSentEvent<String>> stream = webClient
                             .get()
@@ -130,25 +133,37 @@ public class RegistrationRunner implements CommandLineRunner {
         ((ConfigurableApplicationContext)mAppContext).close();
     }
 
+    private WebClient buildWebClient(String aLeader) throws SSLException {
+
+            return WebClient.builder()
+                    .baseUrl(aLeader)
+                    .clientConnector(new ReactorClientHttpConnector(mHttpClient)).build();
+
+    }
+
     private void handleEvent(ServerSentEvent<String> aEvent) {
 
         try {
             final String data = aEvent.data();
-            final JsonParser parser = mObjectMapper.getFactory().createParser(data);
-            final String eventName = aEvent.event().trim(); // Not sure why there's a whitespace at the front of the event name. Possible bug.
 
-            final MarathonEventType eventType = MarathonEventType.get(eventName);
+            if (data != null) {
+                final JsonParser parser = mObjectMapper.getFactory().createParser(data);
+                final String eventName = aEvent.event().trim(); // Not sure why there's a whitespace at the front of the event name. Possible bug.
 
-            if (eventType != null && eventType.getSupportedPredicate().test(mMarathonVersion)) {
-                log.info("Event message: " + data);
+                final MarathonEventType eventType = MarathonEventType.get(eventName);
 
-                final MarathonSSEEvent event = new MarathonSSEEvent();
-                final MarathonEvent marathonEvent = mObjectMapper.readValue(parser, eventType.getEventClass());
+                if (eventType != null && eventType.getSupportedPredicate().test(mMarathonVersion)) {
+                    log.info("Event message: " + data);
 
-                event.setMarathonEvent(marathonEvent);
-                event.setMarathonEventType(eventType);
+                    final MarathonSSEEvent event = new MarathonSSEEvent();
+                    final MarathonEvent marathonEvent = mObjectMapper.readValue(parser, eventType.getEventClass());
 
-                mEventHandler.onEvent(event);
+                    event.setMarathonEvent(marathonEvent);
+                    event.setMarathonEventType(eventType);
+
+                    mEventHandler.onEvent(event);
+                }
+
             }
 
         } catch (Exception e) {

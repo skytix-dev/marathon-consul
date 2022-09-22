@@ -4,6 +4,7 @@ import com.skytix.mconsul.event.MarathonEventType;
 import com.skytix.mconsul.services.consul.ConsulService;
 import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.utils.Version;
+import org.springframework.util.ErrorHandler;
 
 /**
  * Created by marcde on 13/10/2015.
@@ -13,9 +14,9 @@ public class MarathonEventHandler {
     private final ConsulService mConsulService;
     private final Object mWriteLock;
     private final Version mMarathonVersion;
-    private final ApplicationErrorHandler mErrorHandler;
+    private final ErrorHandler mErrorHandler;
 
-    public MarathonEventHandler(MarathonService aMarathonService, ConsulService aConsulService, Object aWriteLock, Version aMarathonVersion, ApplicationErrorHandler aErrorHandler) {
+    public MarathonEventHandler(MarathonService aMarathonService, ConsulService aConsulService, Object aWriteLock, Version aMarathonVersion, ErrorHandler aErrorHandler) {
         mMarathonService = aMarathonService;
         mConsulService = aConsulService;
         mWriteLock = aWriteLock;

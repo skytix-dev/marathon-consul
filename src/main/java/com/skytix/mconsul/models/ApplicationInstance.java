@@ -6,6 +6,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.Map;
+
 /**
  * Created by xfire on 10/10/2015.
  */
@@ -16,14 +18,16 @@ public class ApplicationInstance implements Comparable {
     private final String mHostName;
     private final int[] mPorts;
     private final TaskStatus mTaskStatus;
+    private final Map<String, String> mLabels;
 
-    public ApplicationInstance(String aId, String aAppId, String aAppName, String aHostName, int[] aPorts, TaskStatus aTaskStatus) {
+    public ApplicationInstance(String aId, String aAppId, String aAppName, String aHostName, int[] aPorts, TaskStatus aTaskStatus, Map<String, String> aLabels) {
         mId = aId;
         mAppId = aAppId;
         mAppName = aAppName;
         mHostName = aHostName;
         mPorts = aPorts;
         mTaskStatus = aTaskStatus;
+        mLabels = aLabels;
     }
 
     public String getId() {
@@ -48,6 +52,10 @@ public class ApplicationInstance implements Comparable {
 
     public TaskStatus getTaskStatus() {
         return mTaskStatus;
+    }
+
+    public Map<String, String> getLabels() {
+        return mLabels;
     }
 
     @Override

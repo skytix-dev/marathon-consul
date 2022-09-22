@@ -1,5 +1,5 @@
-FROM openjdk:11-slim
-MAINTAINER Marc Dergacz, SkyTIX <marc@skytix.com.au>
+FROM openjdk:17-slim
+MAINTAINER Marc Dergacz, SkyTIX <marc@skytix.au>
 
 WORKDIR /
 

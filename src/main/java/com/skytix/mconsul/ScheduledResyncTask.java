@@ -51,7 +51,7 @@ public class ScheduledResyncTask {
 
         } catch (ConsulServiceException e) {
             log.error(e.getMessage(), e);
-            mErrorHandler.handle(e);
+            mErrorHandler.handleError(e);
 
         } catch (Exception e) {
             log.error(e.getMessage(), e);

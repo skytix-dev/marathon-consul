@@ -1,15 +1,19 @@
 package com.skytix.mconsul;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ErrorHandler;
 
 @Component
-public class ApplicationErrorHandler {
-    @Autowired
-    private RegistrationRunner mRegistrationRunner;
+public class ApplicationErrorHandler implements ErrorHandler {
+    private final RegistrationRunner mRegistrationRunner;
 
-    public void handle(Exception e) {
-        mRegistrationRunner.exit(e);
+    public ApplicationErrorHandler(RegistrationRunner mRegistrationRunner) {
+        this.mRegistrationRunner = mRegistrationRunner;
+    }
+
+    @Override
+    public void handleError(Throwable t) {
+        mRegistrationRunner.exit(t);
     }
 
 }

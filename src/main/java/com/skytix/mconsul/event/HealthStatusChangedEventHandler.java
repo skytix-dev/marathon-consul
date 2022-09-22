@@ -1,6 +1,5 @@
 package com.skytix.mconsul.event;
 
-import com.skytix.mconsul.ApplicationErrorHandler;
 import com.skytix.mconsul.models.ApplicationInstance;
 import com.skytix.mconsul.services.consul.ConsulService;
 import com.skytix.mconsul.services.consul.ConsulServiceException;
@@ -9,6 +8,7 @@ import com.skytix.mconsul.utils.Version;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ErrorHandler;
 
 /**
  * Created by marcde on 9/10/2015.
@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public class HealthStatusChangedEventHandler extends AbstractEventHandler<HealthStatusChangedEvent> {
     private static final Logger log = LoggerFactory.getLogger(HealthStatusChangedEventHandler.class);
 
-    public HealthStatusChangedEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ApplicationErrorHandler aErrorHandler) {
+    public HealthStatusChangedEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ErrorHandler aErrorHandler) {
         super(aMarathonService, aConsulService, aErrorHandler);
     }
 
@@ -41,7 +41,7 @@ public class HealthStatusChangedEventHandler extends AbstractEventHandler<Health
             }
 
         } catch (ConsulServiceException e) {
-            getErrorHandler().handle(e);
+            getErrorHandler().handleError(e);
         }
 
     }

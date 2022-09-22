@@ -3,6 +3,8 @@ package com.skytix.mconsul.services.consul.rest;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Map;
+
 /**
  * Created by xfire on 10/10/2015.
  */
@@ -12,15 +14,17 @@ public class ConsulCatalogRegister {
     private String mName;
     private String mAddress;
     private int mPort;
+    private Map<String, String> mMeta;
 
     public ConsulCatalogRegister() {
     }
 
-    public ConsulCatalogRegister(String aId, String aName, String aAddress, int aPort) {
-        mId = aId;
-        mName = aName;
-        mAddress = aAddress;
-        mPort = aPort;
+    public ConsulCatalogRegister(String mId, String mName, String mAddress, int mPort, Map<String, String> mMeta) {
+        this.mId = mId;
+        this.mName = mName;
+        this.mAddress = mAddress;
+        this.mPort = mPort;
+        this.mMeta = mMeta;
     }
 
     @JsonProperty("ID")
@@ -43,6 +47,11 @@ public class ConsulCatalogRegister {
         return mPort;
     }
 
+    @JsonProperty("Meta")
+    public Map<String, String> getMeta() {
+        return mMeta;
+    }
+
     public void setId(String aId) {
         mId = aId;
     }
@@ -57,5 +66,9 @@ public class ConsulCatalogRegister {
 
     public void setPort(int aPort) {
         mPort = aPort;
+    }
+
+    public void setMeta(Map<String, String> aMeta) {
+        mMeta = aMeta;
     }
 }

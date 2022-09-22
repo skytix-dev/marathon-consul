@@ -1,6 +1,7 @@
 package com.skytix.mconsul.services.marathon;
 
 import com.skytix.mconsul.models.ApplicationInstance;
+import com.skytix.mconsul.services.marathon.rest.MarathonApplication;
 import com.skytix.mconsul.services.marathon.rest.Task;
 import com.skytix.mconsul.utils.Version;
 
@@ -39,8 +40,8 @@ public class MarathonUtils {
     }
 
 
-    public static ApplicationInstance buildAppInstance(Task aTask) {
-        return new ApplicationInstance(aTask.getId(), aTask.getAppId(), parseAppName(aTask.getAppId()), aTask.getHost(), aTask.getPorts(), aTask.getState());
+    public static ApplicationInstance buildAppInstance(MarathonApplication aApp, Task aTask) {
+        return new ApplicationInstance(aTask.getId(), aTask.getAppId(), parseAppName(aTask.getAppId()), aTask.getHost(), aTask.getPorts(), aTask.getState(), aApp.getLabels());
     }
 
     /**

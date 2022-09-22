@@ -1,15 +1,16 @@
 package com.skytix.mconsul.event;
 
-import com.skytix.mconsul.ApplicationErrorHandler;
 import com.skytix.mconsul.models.ApplicationInstance;
 import com.skytix.mconsul.services.consul.ConsulService;
 import com.skytix.mconsul.services.consul.ConsulServiceException;
 import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.services.marathon.MarathonUtils;
+import com.skytix.mconsul.services.marathon.rest.MarathonApplication;
 import com.skytix.mconsul.utils.Version;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ErrorHandler;
 
 /**
  * Created by marcde on 9/10/2015.
@@ -17,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class StatusUpdateEventHandler extends AbstractEventHandler<StatusUpdateEvent> {
     private static final Logger log = LoggerFactory.getLogger(StatusUpdateEventHandler.class);
 
-    public StatusUpdateEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ApplicationErrorHandler aErrorHandler) {
+    public StatusUpdateEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ErrorHandler aErrorHandler) {
         super(aMarathonService, aConsulService, aErrorHandler);
     }
 
@@ -30,7 +31,9 @@ public class StatusUpdateEventHandler extends AbstractEventHandler<StatusUpdateE
             if (!StringUtils.isEmpty(taskStatus)) {
                 final boolean containsHealthChecks = getMarathonService().containsHealthChecks(aEvent.getAppId());
                 final TaskStatus status = TaskStatus.valueOf(taskStatus);
-                final ApplicationInstance appInstance = new ApplicationInstance(aEvent.getTaskId(), aEvent.getAppId(), MarathonUtils.parseAppName(aEvent.getAppId()), aEvent.getHost(), aEvent.getPorts(), status);
+                final MarathonApplication application = getMarathonService().getApplication(aEvent.getAppId());
+
+                final ApplicationInstance appInstance = new ApplicationInstance(aEvent.getTaskId(), aEvent.getAppId(), MarathonUtils.parseAppName(aEvent.getAppId()), aEvent.getHost(), aEvent.getPorts(), status, application.getLabels());
 
                 if (status.isTerminal()) {
                     // Shut this puppy down.
@@ -60,7 +63,7 @@ public class StatusUpdateEventHandler extends AbstractEventHandler<StatusUpdateE
             }
 
         } catch (ConsulServiceException e) {
-            getErrorHandler().handle(e);
+            getErrorHandler().handleError(e);
         }
 
     }

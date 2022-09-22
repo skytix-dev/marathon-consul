@@ -1,10 +1,9 @@
 plugins {
-    id "org.springframework.boot" version "2.1.8.RELEASE"
+    id "org.springframework.boot" version "2.7.3"
 }
 
 apply plugin: 'idea'
 apply plugin: 'java'
-apply plugin: 'maven'
 apply plugin: 'io.spring.dependency-management'
 
 final def APP_NAME = 'marathon-consul'
@@ -14,9 +13,6 @@ group = GROUP_ID
 repositories {
     mavenLocal()
     mavenCentral()
-    maven {
-        url "http://repo.spring.io/libs-milestone/"
-    }
 }
 
 configurations.all {
@@ -32,8 +28,8 @@ dependencyManagement {
 
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 idea {
     module {
@@ -43,23 +39,25 @@ idea {
 }
 
 dependencies {
-    compile ('org.springframework.boot:spring-boot-starter:2.1.8.RELEASE')
-    compile ('org.springframework.boot:spring-boot-starter-webflux:2.1.8.RELEASE')
-    compile("commons-cli:commons-cli:1.4")
-    compile('org.apache.commons:commons-lang3:3.8')
-    compile("org.apache.zookeeper:zookeeper:3.4.13")
-    compile("org.slf4j:jcl-over-slf4j:1.7.12")
-    compile("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.5")
-    compile("com.fasterxml.jackson.core:jackson-databind:2.9.8")
-    compile("com.fasterxml.jackson.core:jackson-core:2.9.8")
-    compile("com.fasterxml.jackson.core:jackson-annotations:2.9.8")
-    compile("com.fasterxml.jackson.module:jackson-module-mrbean:2.9.8")
-    compile('com.netflix.feign:feign-core:8.18.0')
-    compile('com.netflix.feign:feign-jackson:8.18.0')
-    compile('javax.xml.bind:jaxb-api:2.3.0')
-    compile('com.sun.xml.bind:jaxb-core:2.3.0')
-    compile('com.sun.xml.bind:jaxb-impl:2.3.0')
-    compile group: 'org.apache.curator', name: 'curator-framework', version: '4.2.0'
-    compile group: 'org.apache.curator', name: 'curator-recipes', version: '4.2.0'
+    implementation ('org.springframework.boot:spring-boot-starter:2.7.3')
+    implementation ('org.springframework.boot:spring-boot-starter-webflux:2.7.3')
+    implementation("commons-cli:commons-cli:1.4")
+    implementation('org.apache.commons:commons-lang3:3.8')
+    implementation('org.apache.zookeeper:zookeeper:3.8.0')
+    implementation("org.slf4j:jcl-over-slf4j:1.7.12")
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.9'
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.5")
+    implementation('com.fasterxml.jackson.core:jackson-databind:2.13.4')
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.13.4")
+    implementation("com.fasterxml.jackson.module:jackson-module-mrbean:2.13.4")
+    implementation 'io.github.openfeign:feign-core:11.9.1'
+    implementation 'io.github.openfeign:feign-jackson:11.9.1'
+
+    implementation('javax.xml.bind:jaxb-api:2.3.0')
+    implementation('com.sun.xml.bind:jaxb-core:2.3.0')
+    implementation('com.sun.xml.bind:jaxb-impl:2.3.0')
+    implementation group: 'org.apache.curator', name: 'curator-framework', version: '5.3.0'
+    implementation group: 'org.apache.curator', name: 'curator-recipes', version: '5.3.0'
 
 }

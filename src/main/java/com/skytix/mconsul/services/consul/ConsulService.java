@@ -47,7 +47,7 @@ public class ConsulService {
     @Value("${consulAgent:consul.service.consul:8500}")
     private String mConsulHost;
 
-    @Value("${excludedServiceNames}")
+    @Value("${excludedServiceNames:}")
     private String mExcludedServiceNames;
 
     @Autowired
@@ -134,13 +134,13 @@ public class ConsulService {
     }
 
     public boolean removeInstance(String aAppInstanceId) {
+        boolean removed = false;
 
-        try {
-            boolean removed = false;
+        // When we remove an application, we may not always be running on the same node as when it was registered so we need to go through all the nodes we can find
+        // and remove the service from there otherwise there will be service registration conflicts.
+        for (AgentNode node : getRestInterface().getNodes()) {
 
-            // When we remove an application, we may not always be running on the same node as when it was registered so we need to go through all the nodes we can find
-            // and remove the service from there otherwise there will be service registration conflicts.
-            for (AgentNode node : getRestInterface().getNodes()) {
+            try {
                 final Map<String, AgentServiceNode> agentServices = getRestInterface(node).getAgentServices();
 
                 for (AgentServiceNode agentServiceNode : agentServices.values()) {
@@ -154,22 +154,13 @@ public class ConsulService {
 
                 }
 
-            }
-
-            return removed;
-
-        } catch (RetryableException e) {
-            final Throwable cause = e.getCause();
-
-            if (cause instanceof SocketTimeoutException | cause instanceof ConnectException) {
-                throw new ConsulServiceException(e);
-
-            } else {
-                throw e;
+            } catch (RetryableException e) {
+                log.error(String.format("Unable to contact node %s.  Skipping removing instances", node.getAddress()));
             }
 
         }
 
+        return removed;
     }
 
     public boolean createNode(ApplicationInstance aApplicationInstance) {
@@ -182,6 +173,7 @@ public class ConsulService {
             final String appName = aApplicationInstance.getAppName();
             final int[] ports = aApplicationInstance.getPorts();
             final int numPorts = ports.length;
+            final Map<String, String> labels = aApplicationInstance.getLabels();
 
             boolean created = false;
 
@@ -192,7 +184,7 @@ public class ConsulService {
                     final String serviceId = aServiceId+"-port"+i;
 
                     if (!doesInstanceExist(serviceName, aApplicationInstance)) {
-                        registerService(serviceId, serviceName, aApplicationInstance.getHostName(), ports[i]);
+                        registerService(serviceId, serviceName, aApplicationInstance.getHostName(), ports[i], labels);
                         created = true;
                     }
                 }
@@ -202,7 +194,7 @@ public class ConsulService {
                 if (!doesInstanceExist(appName, aApplicationInstance)) {
 
                     if (ports.length > 0) {
-                        registerService(aServiceId, appName, aApplicationInstance.getHostName(), ports[0]);
+                        registerService(aServiceId, appName, aApplicationInstance.getHostName(), ports[0], labels);
                         created = true;
 
                     } else {
@@ -244,14 +236,15 @@ public class ConsulService {
         return false;
     }
 
-    private void registerService(String aServiceId, String aServiceName, String aAddress, int aPort) {
+    private void registerService(String aServiceId, String aServiceName, String aAddress, int aPort, Map<String, String> aLabels) {
 
         getRestInterface().registerService(
             new ConsulCatalogRegister(
                 aServiceId,
                 aServiceName,
                 aAddress,
-                aPort
+                aPort,
+                aLabels
             )
         );
 

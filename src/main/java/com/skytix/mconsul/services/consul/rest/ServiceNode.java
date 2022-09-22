@@ -3,6 +3,8 @@ package com.skytix.mconsul.services.consul.rest;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Map;
+
 /**
  * Created by marcde on 9/10/2015.
  */
@@ -22,4 +24,6 @@ public interface ServiceNode {
     public String getServiceAddress();
     @JsonProperty("ServicePort")
     public int getServicePort();
+    @JsonProperty("ServiceMeta")
+    public Map<String, String> getServiceMeta();
 }

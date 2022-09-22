@@ -1,11 +1,11 @@
 package com.skytix.mconsul.event;
 
-import com.skytix.mconsul.ApplicationErrorHandler;
 import com.skytix.mconsul.services.consul.ConsulService;
 import com.skytix.mconsul.services.marathon.MarathonService;
 import com.skytix.mconsul.utils.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ErrorHandler;
 
 /**
  * Created by xfire on 11/10/2015.
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 public class InstanceChangedEventHandler extends AbstractEventHandler<InstanceChangedEvent> {
     private static final Logger log = LoggerFactory.getLogger(InstanceChangedEventHandler.class);
 
-    public InstanceChangedEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ApplicationErrorHandler aErrorHandler) {
+    public InstanceChangedEventHandler(MarathonService aMarathonService, ConsulService aConsulService, ErrorHandler aErrorHandler) {
         super(aMarathonService, aConsulService, aErrorHandler);
     }
 

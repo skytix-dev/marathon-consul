@@ -19,14 +19,16 @@ import java.util.*;
 public class Application implements Comparable {
     private final String mAppId;
     private final String mAppName;
+    private final Map<String, String> mAppLabels;
     private final List<ApplicationInstance> mInstances = new ArrayList<>();
 
     public Application(MarathonApplication aApplication) {
         mAppId = aApplication.getId();
         mAppName = MarathonUtils.parseAppName(aApplication.getId());
+        mAppLabels = aApplication.getLabels();
 
         for (Task task : aApplication.getTasks()) {
-            mInstances.add(new ApplicationInstance(task.getId(), mAppId, mAppName, task.getHost(), task.getPorts(), task.getState()));
+            mInstances.add(new ApplicationInstance(task.getId(), mAppId, mAppName, task.getHost(), task.getPorts(), task.getState(), mAppLabels));
         }
 
         Collections.sort(mInstances);
@@ -40,6 +42,13 @@ public class Application implements Comparable {
     public Application(String aServiceName, List<ServiceNode> aConsulNodes) {
         mAppId = aServiceName;
         mAppName = aServiceName;
+
+        if (aConsulNodes.isEmpty()) {
+            mAppLabels = Collections.emptyMap();
+
+        } else {
+            mAppLabels = aConsulNodes.get(0).getServiceMeta();
+        }
 
         final Map<String, Map<Integer, Integer>> serviceNodePorts = new HashMap<>();
         final Map<String, List<ServiceNode>> nodesByServiceId = new HashMap<>();
@@ -71,7 +80,7 @@ public class Application implements Comparable {
                 portArray[portIndex < portArray.length ? portIndex : portArray.length -1] = ports.get(portIndex);
             }
 
-            mInstances.add(new ApplicationInstance(instanceId, mAppId, mAppName, nodes.get(0).getServiceAddress(), portArray, TaskStatus.TASK_RUNNING));
+            mInstances.add(new ApplicationInstance(instanceId, mAppId, mAppName, nodes.get(0).getServiceAddress(), portArray, TaskStatus.TASK_RUNNING, mAppLabels));
         }
 
         Collections.sort(mInstances);
